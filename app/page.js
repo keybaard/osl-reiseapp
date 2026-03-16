@@ -56,6 +56,7 @@ export default function Home() {
         const hh = String(airportArrival.getHours()).padStart(2, "0");
         const mm = String(airportArrival.getMinutes()).padStart(2, "0");
         const formattedTime = `${hh}:${mm}`;
+
         const yyyy = airportArrival.getFullYear();
         const mmDate = String(airportArrival.getMonth() + 1).padStart(2, "0");
         const dd = String(airportArrival.getDate()).padStart(2, "0");
@@ -67,9 +68,9 @@ export default function Home() {
         if (!fromLocation) {
           setFromLocation(HOME_ADDRESS);
           setSelectedPreset("home");
-          await calculateTrips(HOME_ADDRESS, formattedTime);
+          await calculateTrips(HOME_ADDRESS, formattedDate, formattedTime);
         } else {
-          await calculateTrips(fromLocation, formattedTime);
+          await calculateTrips(fromLocation, formattedDate, formattedTime);
         }
       }
     } catch (err) {
@@ -249,7 +250,6 @@ export default function Home() {
                   minute: "2-digit",
                 })}
               </p>
-
               <button
                 type="button"
                 onClick={async () => {
@@ -272,10 +272,18 @@ export default function Home() {
                   const dd = String(airportArrival.getDate()).padStart(2, "0");
                   const formattedDate = `${yyyy}-${mmDate}-${dd}`;
 
+                  const finalFromLocation = fromLocation || HOME_ADDRESS;
+
+                  if (!fromLocation) {
+                    setFromLocation(HOME_ADDRESS);
+                    setSelectedPreset("home");
+                  }
+
                   setArrivalDate(formattedDate);
                   setArrivalTime(formattedTime);
+
                   await calculateTrips(
-                    fromLocation,
+                    finalFromLocation,
                     formattedDate,
                     formattedTime,
                   );
@@ -292,7 +300,7 @@ export default function Home() {
                 }}
               >
                 Bruk dette tidspunktet for OSL
-              </button>
+              </button>{" "}
             </>
           ) : (
             <p style={{ margin: 0 }}>Fant ingen kommende flyreiser.</p>
