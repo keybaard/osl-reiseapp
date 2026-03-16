@@ -145,20 +145,14 @@ async function getJourneysToStop(fromPlace, stopPlaceId, label) {
   return data?.data?.trip?.tripPatterns || [];
 }
 
-function buildRequestedDateTime(arrivalTime) {
-  const now = new Date();
+function buildRequestedDateTime(arrivalDate, arrivalTime) {
+  const [year, month, day] = arrivalDate.split("-").map(Number);
   const [hours, minutes] = arrivalTime.split(":").map(Number);
 
-  const requestedDate = new Date(now);
-  requestedDate.setHours(hours, minutes, 0, 0);
-
-  if (requestedDate.getTime() < now.getTime()) {
-    requestedDate.setDate(requestedDate.getDate() + 1);
-  }
+  const requestedDate = new Date(year, month - 1, day, hours, minutes, 0, 0);
 
   return requestedDate.toISOString();
 }
-
 function formatTime(isoString) {
   if (!isoString) return "";
   const date = new Date(isoString);
@@ -251,6 +245,8 @@ function mapTripPattern(pattern, index, destinationType, destinationLabel) {
       authority: leg?.authority?.name || "",
       startTime: formatTime(leg.expectedStartTime),
       endTime: formatTime(leg.expectedEndTime),
+      startTimeIso: leg.expectedStartTime || null,
+      endTimeIso: leg.expectedEndTime || null,
     })) || [];
 
   const { cleanedLegs, adjustedArrivalTime } = cleanAirportLegs(rawLegs);
@@ -261,6 +257,13 @@ function mapTripPattern(pattern, index, destinationType, destinationLabel) {
 
   const changes = Math.max(0, nonFootLegs.length - 1);
 
+  const leaveHomeIso =
+    cleanedLegs[0]?.startTimeIso || pattern.expectedStartTime || null;
+  const arriveAirportIso =
+    cleanedLegs[cleanedLegs.length - 1]?.endTimeIso ||
+    pattern.expectedEndTime ||
+    null;
+
   return {
     id: `${destinationType}-${index}`,
     title: classifyTrip(pattern.legs, destinationType),
@@ -268,7 +271,9 @@ function mapTripPattern(pattern, index, destinationType, destinationLabel) {
     destinationLabel,
     leaveHome:
       cleanedLegs[0]?.startTime || formatTime(pattern.expectedStartTime),
+    leaveHomeIso,
     arriveAirport: adjustedArrivalTime || formatTime(pattern.expectedEndTime),
+    arriveAirportIso,
     durationSeconds: pattern.duration,
     walkDistance: Math.round(pattern.walkDistance || 0),
     changes,
@@ -280,11 +285,11 @@ function mapTripPattern(pattern, index, destinationType, destinationLabel) {
 export async function POST(request) {
   try {
     const body = await request.json();
-    const { fromLocation, arrivalTime } = body;
+    const { fromLocation, arrivalDate, arrivalTime } = body;
 
-    if (!fromLocation || !arrivalTime) {
+    if (!fromLocation || !arrivalDate || !arrivalTime) {
       return Response.json(
-        { error: "Mangler startsted eller ankomsttid." },
+        { error: "Mangler startsted, dato eller ankomsttid." },
         { status: 400 },
       );
     }
@@ -297,7 +302,7 @@ export async function POST(request) {
     }
 
     const fromPlace = getCoordinatesFromFeature(fromFeature);
-    const dateTime = buildRequestedDateTime(arrivalTime);
+    const dateTime = buildRequestedDateTime(arrivalDate, arrivalTime);
 
     const airportStops = await geocodeAirportStops();
 
@@ -334,12 +339,32 @@ export async function POST(request) {
       );
     }
 
-    const options = allOptions.sort((a, b) => b.score - a.score);
-    const recommendedOption = options[0] || null;
+const options = allOptions.sort((a, b) => b.score - a.score);
+
+const targetTime = new Date(dateTime).getTime();
+
+const validOptions = options.filter(
+  (opt) =>
+    opt.arriveAirportIso &&
+    new Date(opt.arriveAirportIso).getTime() <= targetTime,
+);
+
+validOptions.sort((a, b) => {
+  const diffA = targetTime - new Date(a.arriveAirportIso).getTime();
+  const diffB = targetTime - new Date(b.arriveAirportIso).getTime();
+
+  if (diffA !== diffB) return diffA - diffB;
+  if (a.changes !== b.changes) return a.changes - b.changes;
+  return a.walkDistance - b.walkDistance;
+});
+
+const recommendedOption = validOptions[0] || options[0] || null;
 
     return Response.json({
       fromLocation: fromPlace.name,
+      targetArrivalDate: arrivalDate,
       targetArrivalTime: arrivalTime,
+      targetDateTime: dateTime,
       airportStops,
       recommendedLeaveTime: recommendedOption?.leaveHome || null,
       recommendedOption,

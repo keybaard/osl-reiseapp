@@ -40,6 +40,10 @@ const PLACE_TO_AIRPORT_CODE = {
   kristiansand: "KRS",
   haugesund: "HAU",
   molde: "MOL",
+  harstad: "EVE",
+  narvik: "EVE",
+  "harstad-narvik": "EVE",
+  evenes: "EVE",
 };
 const KNOWN_AIRPORT_CODES = [
   "OSL",
@@ -208,6 +212,17 @@ function subtractHoursFromDateString(dateString, hours) {
 }
 
 export function detectFlight(event) {
+  const titleLower = (event.title || "").toLowerCase();
+
+  if (
+    titleLower.includes("uke ") ||
+    titleLower.includes("week ") ||
+    titleLower.includes("ferie") ||
+    titleLower.includes("helligdag") ||
+    titleLower.includes("birthday")
+  ) {
+    return { isFlight: false };
+  }
   const combinedText = [
     event.title || "",
     event.description || "",

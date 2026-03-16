@@ -77,15 +77,17 @@ export async function GET() {
           calendar.id,
         );
 
-        const mapped = items.map((event) => ({
-          id: event.id,
-          calendarId: calendar.id,
-          calendarSummary: calendar.summary,
-          title: event.summary || "",
-          description: event.description || "",
-          location: event.location || "",
-          startTime: event.start?.dateTime || event.start?.date || null,
-        }));
+        const mapped = items
+          .filter((event) => event.start?.dateTime) // bare events med ekte klokkeslett
+          .map((event) => ({
+            id: event.id,
+            calendarId: calendar.id,
+            calendarSummary: calendar.summary,
+            title: event.summary || "",
+            description: event.description || "",
+            location: event.location || "",
+            startTime: event.start?.dateTime || null,
+          }));
 
         allEvents.push(...mapped);
       } catch (err) {
@@ -96,12 +98,16 @@ export async function GET() {
       }
     }
 
+    const now = Date.now();
+
     const detectedFlights = allEvents
       .map((event) => ({
         originalEvent: event,
         detected: detectFlight(event),
       }))
       .filter((item) => item.detected.isFlight)
+      .filter((item) => item.detected.departureTime)
+      .filter((item) => new Date(item.detected.departureTime).getTime() > now)
       .sort(
         (a, b) =>
           new Date(a.detected.departureTime).getTime() -

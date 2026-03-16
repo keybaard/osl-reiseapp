@@ -10,6 +10,15 @@ function modeLabel(mode) {
   if (mode === "metro") return "🚇 T-bane";
   return mode;
 }
+function formatDateLabel(dateTimeString) {
+  const date = new Date(dateTimeString);
+
+  return date.toLocaleDateString("nb-NO", {
+    weekday: "long",
+    day: "numeric",
+    month: "long",
+  });
+}
 
 const HOME_ADDRESS = "Hans Nielsen Hauges gate 29D, 0481 Oslo";
 const WORK_ADDRESS = "Malmøgata 11, Oslo";
@@ -18,6 +27,7 @@ export default function Home() {
   const [fromLocation, setFromLocation] = useState(HOME_ADDRESS);
   const [selectedPreset, setSelectedPreset] = useState("home");
   const [arrivalTime, setArrivalTime] = useState("");
+  const [arrivalDate, setArrivalDate] = useState("");
   const [tripData, setTripData] = useState(null);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState("");
@@ -46,7 +56,12 @@ export default function Home() {
         const hh = String(airportArrival.getHours()).padStart(2, "0");
         const mm = String(airportArrival.getMinutes()).padStart(2, "0");
         const formattedTime = `${hh}:${mm}`;
+        const yyyy = airportArrival.getFullYear();
+        const mmDate = String(airportArrival.getMonth() + 1).padStart(2, "0");
+        const dd = String(airportArrival.getDate()).padStart(2, "0");
+        const formattedDate = `${yyyy}-${mmDate}-${dd}`;
 
+        setArrivalDate(formattedDate);
         setArrivalTime(formattedTime);
 
         if (!fromLocation) {
@@ -74,15 +89,20 @@ export default function Home() {
     }
   }
 
-  async function calculateTrips(customFromLocation, customArrivalTime) {
+  async function calculateTrips(
+    customFromLocation,
+    customArrivalDate,
+    customArrivalTime,
+  ) {
     setError("");
     setTripData(null);
 
     const finalFromLocation = customFromLocation || fromLocation;
+    const finalArrivalDate = customArrivalDate || arrivalDate;
     const finalArrivalTime = customArrivalTime || arrivalTime;
 
-    if (!finalFromLocation || !finalArrivalTime) {
-      setError("Fyll inn både startsted og tidspunkt.");
+    if (!finalFromLocation || !finalArrivalDate || !finalArrivalTime) {
+      setError("Fyll inn startsted, dato og tidspunkt.");
       return;
     }
 
@@ -96,6 +116,7 @@ export default function Home() {
         },
         body: JSON.stringify({
           fromLocation: finalFromLocation,
+          arrivalDate: finalArrivalDate,
           arrivalTime: finalArrivalTime,
         }),
       });
@@ -125,7 +146,7 @@ export default function Home() {
         minHeight: "100vh",
         padding: "40px",
         fontFamily: "Arial, sans-serif",
-        backgroundColor: "#f7f7f7",
+        backgroundColor: "#f2f2f7",
         color: "#333",
       }}
     >
@@ -134,9 +155,9 @@ export default function Home() {
           maxWidth: "760px",
           margin: "0 auto",
           backgroundColor: "white",
-          padding: "24px",
-          borderRadius: "12px",
-          boxShadow: "0 4px 20px rgba(0,0,0,0.08)",
+          padding: "32px",
+          borderRadius: "16px",
+          boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
         }}
       >
         <h1 style={{ fontSize: "32px", marginBottom: "8px" }}>
@@ -243,8 +264,21 @@ export default function Home() {
                   );
                   const formattedTime = `${hh}:${mm}`;
 
+                  const yyyy = airportArrival.getFullYear();
+                  const mmDate = String(airportArrival.getMonth() + 1).padStart(
+                    2,
+                    "0",
+                  );
+                  const dd = String(airportArrival.getDate()).padStart(2, "0");
+                  const formattedDate = `${yyyy}-${mmDate}-${dd}`;
+
+                  setArrivalDate(formattedDate);
                   setArrivalTime(formattedTime);
-                  await calculateTrips(fromLocation, formattedTime);
+                  await calculateTrips(
+                    fromLocation,
+                    formattedDate,
+                    formattedTime,
+                  );
                 }}
                 style={{
                   marginTop: "12px",
@@ -354,6 +388,32 @@ export default function Home() {
               fontWeight: "bold",
             }}
           >
+            Hvilken dag vil du være på Oslo Lufthavn?
+          </label>
+
+          <input
+            type="date"
+            value={arrivalDate}
+            onChange={(e) => setArrivalDate(e.target.value)}
+            style={{
+              width: "100%",
+              padding: "12px",
+              fontSize: "16px",
+              marginBottom: "16px",
+              border: "1px solid #ccc",
+              borderRadius: "8px",
+              color: "#111",
+              backgroundColor: "white",
+            }}
+          />
+
+          <label
+            style={{
+              display: "block",
+              marginBottom: "8px",
+              fontWeight: "bold",
+            }}
+          >
             Når vil du være på Oslo Lufthavn?
           </label>
 
@@ -420,6 +480,10 @@ export default function Home() {
               </h2>
               <p style={{ margin: "4px 0" }}>
                 <strong>Fra:</strong> {tripData.fromLocation}
+              </p>
+              <p style={{ margin: "4px 0" }}>
+                <strong>Dato:</strong>{" "}
+                {formatDateLabel(tripData.targetDateTime)}
               </p>
               <p style={{ margin: "4px 0" }}>
                 <strong>Beste valg:</strong> {tripData.recommendedOption.title}
