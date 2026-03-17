@@ -48,6 +48,19 @@ export default function Home() {
   const [loadingNextFlight, setLoadingNextFlight] = useState(false);
   const [showRecommendedLegs, setShowRecommendedLegs] = useState(false);
 
+  const [isMobile, setIsMobile] = useState(false);
+
+  useEffect(() => {
+    function handleResize() {
+      setIsMobile(window.innerWidth < 768);
+    }
+
+    handleResize();
+    window.addEventListener("resize", handleResize);
+
+    return () => window.removeEventListener("resize", handleResize);
+  }, []);
+
   useEffect(() => {
     loadNextFlight();
   }, []);
@@ -159,8 +172,7 @@ export default function Home() {
     <main
       style={{
         minHeight: "100vh",
-        padding: "40px",
-
+        padding: isMobile ? "16px" : "40px",
         backgroundColor: "#f2f2f7",
         color: "#333",
       }}
@@ -170,8 +182,8 @@ export default function Home() {
           maxWidth: "1180px",
           margin: "0 auto",
           backgroundColor: "white",
-          padding: "32px",
-          borderRadius: "16px",
+          padding: isMobile ? "20px" : "32px",
+          borderRadius: isMobile ? "14px" : "16px",
           boxShadow: "0 10px 30px rgba(0,0,0,0.06)",
         }}
       >
@@ -228,8 +240,10 @@ export default function Home() {
         <div
           style={{
             display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(360px, 1fr))",
-            gap: "24px",
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : "repeat(auto-fit, minmax(360px, 1fr))",
+            gap: isMobile ? "18px" : "24px",
             alignItems: "start",
           }}
         >
@@ -237,13 +251,18 @@ export default function Home() {
             <div
               style={{
                 marginBottom: "24px",
-                padding: "20px",
+                padding: isMobile ? "16px" : "20px",
                 backgroundColor: "#f8fafc",
                 border: "1px solid #e2e8f0",
-                borderRadius: "14px",
+                borderRadius: isMobile ? "12px" : "14px",
               }}
             >
-              <h2 style={{ margin: "0 0 12px 0", fontSize: "22px" }}>
+              <h2
+                style={{
+                  margin: "0 0 12px 0",
+                  fontSize: isMobile ? "20px" : "22px",
+                }}
+              >
                 ✈️ Neste fly
               </h2>
 
@@ -335,11 +354,12 @@ export default function Home() {
                       marginTop: "12px",
                       backgroundColor: "#0f172a",
                       color: "white",
-                      padding: "10px 14px",
+                      padding: isMobile ? "10px 12px" : "10px 14px",
                       border: "none",
                       borderRadius: "8px",
                       cursor: "pointer",
-                      fontSize: "15px",
+                      fontSize: isMobile ? "14px" : "15px",
+                      width: isMobile ? "100%" : "auto",
                     }}
                   >
                     Bruk dette tidspunktet for OSL
