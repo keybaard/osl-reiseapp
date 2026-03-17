@@ -747,7 +747,12 @@ export default function Home() {
 
         {tripData?.recommendedOption && (
           <div style={{ marginTop: "32px" }}>
-            <h3 style={{ fontSize: "22px", marginBottom: "12px" }}>
+            <h3
+              style={{
+                marginBottom: "6px",
+                fontSize: isMobile ? "16px" : "18px",
+              }}
+            >
               Alle forslag
             </h3>
 
