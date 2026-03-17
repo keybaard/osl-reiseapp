@@ -577,9 +577,16 @@ export async function GET(request) {
       date_label: formatDateLabel(dateTime),
       next_flight_title: nextFlight.detected.title,
       flight_type: nextFlight.detected.flightType,
+
       departure_time: nextFlight.detected.departureTime,
+      departure_time_text: formatTime(nextFlight.detected.departureTime),
+
       airport_arrival_time: nextFlight.detected.recommendedAirportArrivalTime,
+      airport_arrival_time_text: recommendedOption?.arriveAirport || null,
+
       leave_home_time: recommendedOption?.leaveHomeIso || null,
+      leave_home_time_text: recommendedOption?.leaveHome || null,
+
       from_location: fromPlace.name,
       recommended_title: recommendedOption?.title || null,
       recommended_arrive_airport: recommendedOption?.arriveAirport || null,
