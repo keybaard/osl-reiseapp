@@ -20,6 +20,7 @@ function formatTime(isoString) {
   return new Date(isoString).toLocaleTimeString("no-NO", {
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Europe/Oslo",
   });
 }
 
@@ -29,6 +30,7 @@ function formatDateLabel(dateTimeString) {
     weekday: "long",
     day: "numeric",
     month: "long",
+    timeZone: "Europe/Oslo",
   });
 }
 
