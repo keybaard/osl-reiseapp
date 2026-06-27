@@ -445,7 +445,14 @@ export async function planTripsToAirport(fromLocation, dateTime) {
   ]);
 
   const options = [...railOptions, ...busOptions].sort((a, b) => b.score - a.score);
+  const recommendedOption = chooseRecommendedOption(options, dateTime);
 
+  return { fromPlace, airportStops, options, recommendedOption };
+}
+
+// Pick the best option for arriving by `dateTime`. Kept as a separate pure
+// function so the ranking can be unit-tested without calling the live APIs.
+export function chooseRecommendedOption(options, dateTime) {
   const targetTime = new Date(dateTime).getTime();
 
   const validOptions = options.filter(
@@ -472,7 +479,6 @@ export async function planTripsToAirport(fromLocation, dateTime) {
     return a.walkDistance - b.walkDistance;
   });
 
-  const recommendedOption = validOptions[0] || options[0] || null;
-
-  return { fromPlace, airportStops, options, recommendedOption };
+  // If nothing arrives in time, fall back to the best-scored option.
+  return validOptions[0] || options[0] || null;
 }
