@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { signIn, signOut } from "next-auth/react";
 
 function modeLabel(mode) {
   if (mode === "foot") return "🚶 Gå";
@@ -17,6 +18,7 @@ function formatDateLabel(dateTimeString) {
     weekday: "long",
     day: "numeric",
     month: "long",
+    timeZone: "Europe/Oslo",
   });
 }
 function formatDuration(seconds) {
@@ -61,10 +63,6 @@ export default function Home() {
     return () => window.removeEventListener("resize", handleResize);
   }, []);
 
-  useEffect(() => {
-    loadNextFlight();
-  }, []);
-
   async function loadNextFlight() {
     setLoadingNextFlight(true);
 
@@ -101,7 +99,7 @@ export default function Home() {
         }
       }
     } catch (err) {
-      console.error("Klarte ikke å hente neste fly.");
+      console.error("Klarte ikke å hente neste fly:", err);
     }
 
     setLoadingNextFlight(false);
@@ -157,6 +155,7 @@ export default function Home() {
         setTripData(data);
       }
     } catch (err) {
+      console.error("Klarte ikke å hente reisealternativer:", err);
       setError("Klarte ikke å hente reisealternativer.");
     }
 
@@ -167,6 +166,12 @@ export default function Home() {
     e.preventDefault();
     await calculateTrips();
   }
+
+  // Load the next flight once when the page first mounts.
+  useEffect(() => {
+    loadNextFlight();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   return (
     <main
@@ -198,33 +203,37 @@ export default function Home() {
           OSL Reisehjelper
         </h1>
         <div style={{ display: "flex", gap: "10px", marginBottom: "16px" }}>
-          <a
-            href="/api/auth/signin"
+          <button
+            type="button"
+            onClick={() => signIn("google")}
             style={{
               backgroundColor: "#0f172a",
               color: "white",
               padding: "10px 14px",
               borderRadius: "8px",
-              textDecoration: "none",
+              border: "none",
+              cursor: "pointer",
               fontSize: "14px",
             }}
           >
             Logg inn med Google
-          </a>
+          </button>
 
-          <a
-            href="/api/auth/signout"
+          <button
+            type="button"
+            onClick={() => signOut()}
             style={{
               backgroundColor: "#e5e7eb",
               color: "#111",
               padding: "10px 14px",
               borderRadius: "8px",
-              textDecoration: "none",
+              border: "none",
+              cursor: "pointer",
               fontSize: "14px",
             }}
           >
             Logg ut
-          </a>
+          </button>
         </div>
         <p
           style={{
@@ -283,6 +292,7 @@ export default function Home() {
                         month: "long",
                         hour: "2-digit",
                         minute: "2-digit",
+                        timeZone: "Europe/Oslo",
                       },
                     )}
                   </p>
@@ -304,6 +314,7 @@ export default function Home() {
                       month: "long",
                       hour: "2-digit",
                       minute: "2-digit",
+                      timeZone: "Europe/Oslo",
                     })}
                   </p>
 
